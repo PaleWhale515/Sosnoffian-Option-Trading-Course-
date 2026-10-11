@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trade Ticket · Premium Selling the Sosnoff Way</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Trade ticket</h1>
+    <p>Fill this in <em>before</em> you place the order in thinkorswim (or paperMoney). It calculates the numbers, checks your rulebook, and gives you a calendar file for the 21-DTE close. Nothing leaves your browser.</p>
+    <p class="small muted" id="limits"></p>
+
+    <form class="card" id="ticket" onsubmit="return false">
+      <div class="form-grid">
+        <label>Underlying<input type="text" id="underlying" placeholder="e.g. IWM" autocomplete="off"></label>
+        <label>Structure<select id="structure"></select></label>
+        <label>Underlying price (optional, for the chart)<input type="number" step="any" min="0" id="spot"></label>
+        <label>Credit received (per share, e.g. 0.22)<input type="number" step="0.01" min="0" id="credit"></label>
+        <label>Contracts<input type="number" step="1" min="1" id="qty"></label>
+        <label>Entry date<input type="date" id="entry"></label>
+        <label>Expiration date<input type="date" id="expiration"></label>
+        <label>Next earnings date (manual)<input type="date" id="earnings"></label>
+        <label>IV rank (optional)<input type="number" step="any" min="0" max="100" id="ivr"></label>
+        <label>Fee per contract per leg ($)<input type="number" step="0.01" min="0" id="fee" value="0.65"></label>
+        <label>Open positions right now<input type="number" step="1" min="0" id="open-count" value="0"></label>
+        <label>Current total open risk ($)<input type="number" step="any" min="0" id="open-risk" value="0"></label>
+      </div>
+      <h3>Strikes</h3>
+      <div class="form-grid" id="strikes"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="example">Load illustrative example</button>
+        <button type="button" id="ics" disabled>Download 21-DTE reminder (.ics)</button>
+        <button type="button" class="secondary" id="save-open" disabled>Save as open position</button>
+      </div>
+    </form>
+
+    <section class="card" id="results" aria-live="polite"></section>
+
+    <h2>Open positions</h2>
+    <p class="small muted">Saved here so the ticket can count open positions and total open risk. When a position closes, click “Log exit” to pre-fill the journal, then remove it.</p>
+    <div id="open-list"></div>
+
+    <h2>Placing it in thinkorswim — checklist</h2>
+    <ol>
+      <li>Trade tab → choose the ~45-DTE expiration → right-click the short strike → Sell → Vertical (or Iron Condor). Check the long strike is $1 away.</li>
+      <li>Set a limit price at or near the mid. Confirm the max loss on the order confirmation matches this ticket.</li>
+      <li>After the fill: create a buy-to-close order for the same spread at the GTC price above, time-in-force <strong>GTC</strong>.</li>
+      <li>Import the .ics file into your calendar.</li>
+      <li>Log the entry in the <a href="journal.html">journal</a>.</li>
+    </ol>
+    <p class="small muted">Menu names can differ between thinkorswim versions <span class="badge unverified">Unverified</span>.</p>
+  </main>
+  <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. Calculations are at expiration and exclude early assignment, dividends and slippage; fees are estimates (Schwab lists $0.65 per contract — confirm in the current pricing guide). The 21-DTE date does not account for market holidays.</footer>
+  <script src="js/common.js"></script>
+  <script src="js/payoff.js"></script>
+  <script src="js/ticket.js"></script>
+</body>
+</html>

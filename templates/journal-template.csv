@@ -1,0 +1,2 @@
+date,track,underlying,structure,dte,iv_rank,credit,max_loss,exit_reason,pnl,rule_followed,notes,exit_date,mode
+2026-10-12,45DTE,IWM,Short put vertical 209/210,45,38,22.00,78.00,50% target,8.40,Y,"ILLUSTRATIVE example row - delete before use",2026-10-30,paper

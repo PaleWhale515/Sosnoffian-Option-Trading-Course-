@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scorecard · Premium Selling the Sosnoff Way</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Scorecard</h1>
+    <p>Computed from your <a href="journal.html">journal</a> (closed trades only: those with an exit date and P&amp;L). Per track, so the 0DTE lab never hides inside the main track's numbers.</p>
+    <div class="card">
+      <label style="max-width:260px">Show
+        <select id="mode"><option value="all">Paper + live</option><option value="paper">Paper only</option><option value="live">Live only</option></select>
+      </label>
+    </div>
+    <div id="status"></div>
+    <div id="tables"></div>
+    <h2>How these are calculated</h2>
+    <ul class="small">
+      <li><strong>Win rate</strong> = trades with P&amp;L &gt; 0 ÷ closed trades. Breakeven trades (P&amp;L = 0) count as non-wins.</li>
+      <li><strong>Average win / loss</strong> = mean P&amp;L of winners / of losers.</li>
+      <li><strong>Expectancy</strong> = win rate × average win − loss rate × average loss = average P&amp;L per trade.</li>
+      <li><strong>Breakeven win rate</strong> = average loss ÷ (average win + average loss), using your own averages (Module 07).</li>
+      <li><strong>Average days held</strong> = exit date − entry date.</li>
+      <li>Fewer than 20 closed trades: treat every number as noise (Module 06).</li>
+    </ul>
+  </main>
+  <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. Past results in a journal, especially small samples, do not predict future results.</footer>
+  <script src="js/common.js"></script>
+  <script src="js/journal.js"></script>
+  <script>
+  (function () {
+    var C = window.Course, S = C.getSettings();
+
+    function stats(rows) {
+      var n = rows.length, wins = [], losses = [], days = [], ruleY = 0, ruleKnown = 0, reasons = {};
+      rows.forEach(function (r) {
+        var p = parseFloat(r.pnl);
+        if (p > 0) wins.push(p); else if (p < 0) losses.push(-p);
+        var a = C.parseDate(r.date), b = C.parseDate(r.exit_date);
+        if (a && b) days.push(C.daysBetween(a, b));
+        if (r.rule_followed === "Y" || r.rule_followed === "N") { ruleKnown++; if (r.rule_followed === "Y") ruleY++; }
+        var k = r.exit_reason || "(blank)"; reasons[k] = (reasons[k] || 0) + 1;
+      });
+      function mean(a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : NaN; }
+      var total = rows.reduce(function (x, r) { return x + parseFloat(r.pnl); }, 0);
+      var wr = n ? wins.length / n : NaN, aw = mean(wins), al = mean(losses);
+      var exp = n ? (wr * (isNaN(aw) ? 0 : aw) - (losses.length / n) * (isNaN(al) ? 0 : al)) : NaN;
+      return {
+        n: n, wins: wins.length, losses: losses.length, winRate: wr, avgWin: aw, avgLoss: al, expectancy: exp, total: total,
+        avgDays: mean(days), rulePct: ruleKnown ? ruleY / ruleKnown : NaN, reasons: reasons,
+        beWin: C.breakevenWinRate(aw, al)
+      };
+    }
+
+    function card(title, s) {
+      var reasons = Object.keys(s.reasons).map(function (k) { return C.esc(k) + ": " + s.reasons[k]; }).join(" · ") || "—";
+      return '<div class="card"><h2 style="margin-top:0">' + title + "</h2>" +
+        (s.n && s.n < 20 ? '<div class="alert warn">Only ' + s.n + " closed trade" + (s.n === 1 ? "" : "s") + " — too few to judge (Module 06).</div>" : "") +
+        (s.n ? '<div class="kv">' +
+          "<div><span>Closed trades</span><b>" + s.n + "</b></div>" +
+          "<div><span>Win rate</span><b>" + C.pct(s.winRate) + "</b></div>" +
+          "<div><span>Average win</span><b>" + C.money(s.avgWin) + "</b></div>" +
+          "<div><span>Average loss</span><b>" + (isNaN(s.avgLoss) ? "—" : C.money(-s.avgLoss)) + "</b></div>" +
+          "<div><span>Expectancy / trade</span><b>" + C.money(s.expectancy) + "</b></div>" +
+          "<div><span>Breakeven win rate (your averages)</span><b>" + C.pct(s.beWin) + "</b></div>" +
+          "<div><span>Total P&amp;L</span><b>" + C.money(s.total) + "</b></div>" +
+          "<div><span>Average days held</span><b>" + (isNaN(s.avgDays) ? "—" : s.avgDays.toFixed(1)) + "</b></div>" +
+          "<div><span>Rule followed</span><b>" + C.pct(s.rulePct, 0) + "</b></div>" +
+          "</div><p class=\"small muted\">Exit reasons — " + reasons + "</p>"
+          : '<p class="muted">No closed trades in this track yet.</p>') + "</div>";
+    }
+
+    function draw() {
+      var mode = document.getElementById("mode").value;
+      var all = window.Journal.all();
+      var closed = all.filter(function (r) { return r.exit_date && r.pnl !== "" && !isNaN(parseFloat(r.pnl)); });
+      var shown = closed.filter(function (r) { return mode === "all" || (r.mode || "paper") === mode; });
+      var openN = all.filter(function (r) { return !r.exit_date; }).length;
+
+      // Status: lockout (any mode) and the live stop.
+      var byExit = closed.slice().sort(function (a, b) { return a.exit_date < b.exit_date ? -1 : a.exit_date > b.exit_date ? 1 : 0; });
+      var n = +S.lockoutLosses || 2, lastN = byExit.slice(-n);
+      var locked = false, until = null;
+      if (lastN.length === n && lastN.every(function (r) { return parseFloat(r.pnl) < 0; })) {
+        until = C.addDays(C.parseDate(lastN[n - 1].exit_date), Math.ceil((+S.lockoutHours || 24) / 24));
+        locked = C.today() < until;
+      }
+      var live = closed.filter(function (r) { return r.mode === "live"; }).reduce(function (x, r) { return x + parseFloat(r.pnl); }, 0);
+      var stopHit = live <= -S.stopLossTotal;
+      var st = "";
+      st += '<div class="alert ' + (locked ? "bad" : "good") + '">' + (locked ? "LOCKOUT active: last " + n + " closed trades were losses. No new trades until " + C.prettyDate(until) + "." :
+        "No lockout: the last " + n + " closed trades were not all losses.") + "</div>";
+      st += '<div class="alert ' + (stopHit ? "bad" : live < -S.stopLossTotal * 0.66 ? "warn" : "good") + '">Live P&amp;L to date: <strong>' + C.money(live) +
+        "</strong> (stop at −" + C.money(S.stopLossTotal, 0) + ")." + (stopHit ? " <strong>Stop live trading and return to paperMoney.</strong>" : "") + "</div>";
+      st += '<p class="small muted">Open trades in the journal (no exit date): ' + openN + " · max allowed " + S.maxOpenPositions + ".</p>";
+      document.getElementById("status").innerHTML = st;
+
+      document.getElementById("tables").innerHTML =
+        card('<span class="badge main">Main</span> 45-DTE track', stats(shown.filter(function (r) { return r.track !== "0DTE"; }))) +
+        card('<span class="badge lab">Lab</span> 0DTE track', stats(shown.filter(function (r) { return r.track === "0DTE"; }))) +
+        card("All tracks combined", stats(shown));
+    }
+    document.getElementById("mode").addEventListener("change", draw);
+    draw();
+  })();
+  </script>
+</body>
+</html>

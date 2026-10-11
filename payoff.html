@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payoff Diagrams · Premium Selling the Sosnoff Way</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Payoff-diagram generator</h1>
+    <p>Profit/loss <strong>at expiration</strong> for every structure in Modules 03 and 10. Defaults are <span class="badge illus">Illustrative</span> numbers. Before expiration the real P&amp;L curve is smoother, because options still hold time value.</p>
+    <div class="card">
+      <div class="form-grid" id="inputs">
+        <label>Structure
+          <select id="structure"></select>
+        </label>
+      </div>
+      <div class="actions"><button type="button" class="secondary" id="reset">Reset to illustrative defaults</button></div>
+    </div>
+    <div class="card" id="out"></div>
+  </main>
+  <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. Diagrams show values at expiration only and ignore fees, early assignment and dividends. All defaults are illustrative.</footer>
+  <script src="js/common.js"></script>
+  <script src="js/payoff.js"></script>
+  <script>
+  (function () {
+    var C = window.Course, P = window.Payoff;
+    var sel = document.getElementById("structure");
+    var inputs = document.getElementById("inputs");
+    var out = document.getElementById("out");
+    var groups = { "03": "Module 03 — 45-DTE structures", "10": "Module 10 — 0DTE" };
+    Object.keys(groups).forEach(function (g) {
+      var og = document.createElement("optgroup");
+      og.label = groups[g];
+      Object.keys(P.STRUCTURES).forEach(function (k) {
+        if (P.STRUCTURES[k].module === g) {
+          var o = document.createElement("option");
+          o.value = k; o.textContent = P.STRUCTURES[k].name;
+          og.appendChild(o);
+        }
+      });
+      sel.appendChild(og);
+    });
+    var initial = new URLSearchParams(location.search).get("s");
+    if (initial && P.STRUCTURES[initial]) sel.value = initial;
+
+    function build(useDefaults) {
+      inputs.querySelectorAll(".dyn").forEach(function (n) { n.remove(); });
+      var st = P.STRUCTURES[sel.value];
+      var d = st.defaults;
+      var fields = [["spot", "Underlying price now"]].concat(st.fields).concat([["premium", "Net " + st.premium + " (per share)"], ["qty", "Contracts"]]);
+      fields.forEach(function (f) {
+        var lab = document.createElement("label");
+        lab.className = "dyn";
+        var val = f[0] === "qty" ? 1 : d[f[0]];
+        lab.innerHTML = C.esc(f[1]) + '<input type="number" step="any" min="0" data-k="' + f[0] + '" value="' + val + '">';
+        inputs.appendChild(lab);
+      });
+      inputs.querySelectorAll("input").forEach(function (i) { i.addEventListener("input", draw); });
+      draw();
+    }
+    function draw() {
+      var st = P.STRUCTURES[sel.value];
+      var p = {};
+      var bad = false;
+      inputs.querySelectorAll("input").forEach(function (i) {
+        var v = parseFloat(i.value);
+        if (isNaN(v)) bad = true;
+        p[i.getAttribute("data-k")] = v;
+      });
+      if (bad) { out.innerHTML = '<div class="alert warn">Fill in every field with a number.</div>'; return; }
+      var res = P.analyze(sel.value, p);
+      out.innerHTML = "<h2 style=\"margin-top:0\">" + C.esc(st.name) + "</h2><p class=\"muted\">" + C.esc(st.note) + "</p>" +
+        P.svgChart(res, p.spot) + P.summaryHTML(res, C.getSettings()) +
+        '<p class="small muted">Legs: ' + res.legs.map(function (l) { return (l.q > 0 ? "Buy " : "Sell ") + Math.abs(l.q) * res.qty + " × " + l.k + (l.t === "C" ? " call" : " put"); }).join(" · ") +
+        '. Learn more in <a href="module.html?m=' + st.module + '">Module ' + st.module + "</a>.</p>";
+    }
+    sel.addEventListener("change", function () { history.replaceState(null, "", "?s=" + sel.value); build(true); });
+    document.getElementById("reset").addEventListener("click", function () { build(true); });
+    build(true);
+  })();
+  </script>
+</body>
+</html>

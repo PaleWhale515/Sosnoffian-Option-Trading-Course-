@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rulebook Builder · Premium Selling the Sosnoff Way</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #rulebook h2 { margin-top: 0.8em; font-size: 1.05rem; }
+    #rulebook ol, #rulebook ul { margin: 0.3em 0; padding-left: 1.3em; }
+    #rulebook li { margin: 2px 0; }
+    @media print { #rulebook { font-size: 11px; } #rulebook h1 { font-size: 16px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="no-print">
+      <h1>Rulebook builder</h1>
+      <p>Edit your limits. The trade ticket and scorecard use these values. Then print the one-page rulebook and keep it next to your screen.</p>
+      <form class="card" id="settings" onsubmit="return false">
+        <div class="form-grid">
+          <label>Your name (optional)<input type="text" name="traderName"></label>
+          <label>Max defined risk per trade ($)<input type="number" name="maxRiskPerTrade" min="1" step="1"></label>
+          <label>Max contracts per trade<input type="number" name="maxContracts" min="1" step="1"></label>
+          <label>Max open positions<input type="number" name="maxOpenPositions" min="1" step="1"></label>
+          <label>Max total open risk ($)<input type="number" name="maxTotalOpenRisk" min="1" step="1"></label>
+          <label>Stop live trading at total loss of ($)<input type="number" name="stopLossTotal" min="1" step="1"></label>
+          <label>Lockout after N consecutive losses<input type="number" name="lockoutLosses" min="1" step="1"></label>
+          <label>Lockout length (hours)<input type="number" name="lockoutHours" min="1" step="1"></label>
+          <label>Target DTE at entry<input type="number" name="targetDTE" min="1" step="1"></label>
+          <label>Profit target (% of credit)<input type="number" name="profitTargetPct" min="1" max="100" step="1"></label>
+          <label>Close at DTE<input type="number" name="closeAtDTE" min="0" step="1"></label>
+          <label>New trades per week<input type="number" name="newTradesPerWeek" min="0" step="1"></label>
+          <label>Minimum IV rank<input type="number" name="minIVRank" min="0" max="100" step="1"></label>
+          <label>Trading window<input type="text" name="tradingWindow"></label>
+          <label>Check frequency<input type="text" name="checkFrequency"></label>
+          <label>Approval level<input type="text" name="approvalLevel"></label>
+          <label>0DTE lab enabled?<select name="zeroDteEnabled"><option value="false">No (default)</option><option value="true">Yes</option></select></label>
+        </div>
+        <div class="actions">
+          <button type="button" id="print">Print rulebook</button>
+          <button type="button" class="secondary" id="dl">Download as text</button>
+          <button type="button" class="danger" id="defaults">Reset to course defaults</button>
+        </div>
+        <p class="small muted" id="saved" aria-live="polite"></p>
+      </form>
+    </div>
+    <article class="card" id="rulebook"></article>
+  </main>
+  <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. These are personal practice rules built from a course, not recommendations for any specific trade.</footer>
+  <script src="js/common.js"></script>
+  <script>
+  (function () {
+    var C = window.Course;
+    var form = document.getElementById("settings");
+    var out = document.getElementById("rulebook");
+    var NUM = ["maxRiskPerTrade", "maxContracts", "maxOpenPositions", "maxTotalOpenRisk", "stopLossTotal", "lockoutLosses", "lockoutHours", "targetDTE", "profitTargetPct", "closeAtDTE", "newTradesPerWeek", "minIVRank"];
+    var B = { s: '<span class="badge sosnoff">Sosnoff</span>', t: '<span class="badge tasty">tastylive</span>', a: '<span class="badge adapt">Adaptation</span>' };
+
+    function fill(s) { Object.keys(s).forEach(function (k) { if (form.elements[k]) form.elements[k].value = String(s[k]); }); }
+    function read() {
+      var s = {};
+      Object.keys(C.DEFAULT_SETTINGS).forEach(function (k) {
+        var el = form.elements[k]; if (!el) return;
+        var v = el.value.trim();
+        if (NUM.indexOf(k) >= 0) { var n = parseFloat(v); s[k] = isNaN(n) ? C.DEFAULT_SETTINGS[k] : n; }
+        else if (k === "zeroDteEnabled") s[k] = v === "true";
+        else s[k] = v || C.DEFAULT_SETTINGS[k];
+      });
+      return s;
+    }
+
+    function rules(s) {
+      var tgtPct = s.profitTargetPct;
+      return [
+        ["Before any trade", [
+          ["Approval: " + s.approvalLevel + ". Until Level 2 is approved, trade only in paperMoney.", "a"],
+          ["Trade only in the " + s.tradingWindow + " window. Check positions: " + s.checkFrequency.toLowerCase() + ". No intraday watching.", "a"],
+          ["Each session starts at $0 P&L.", "a"],
+          ["If my last " + s.lockoutLosses + " trades were losses: " + s.lockoutHours + "-hour lockout. No new trades.", "a"],
+          ["If live P&L reaches −$" + s.stopLossTotal + ": stop live trading, return to paperMoney, review the journal.", "a"]
+        ]],
+        ["Selecting the trade", [
+          ["Underlyings: SPY, QQQ, IWM, XSP — or a single stock with tight bid/ask, high open interest, and $1-wide strikes.", "a"],
+          ["IV rank ≥ " + s.minIVRank + " (write down whether the number is IV rank or IV percentile).", "t"],
+          ["Expiration closest to " + s.targetDTE + " DTE.", "s"],
+          ["NEVER hold through earnings. Check the date before entry; skip if earnings fall on or before the " + s.closeAtDTE + "-DTE date.", "a"]
+        ]],
+        ["Size", [
+          ["Defined-risk only. Max loss ≤ $" + s.maxRiskPerTrade + ", " + s.maxContracts + " contract" + (s.maxContracts == 1 ? "" : "s") + ".", "a"],
+          [s.newTradesPerWeek + " new trade" + (s.newTradesPerWeek == 1 ? "" : "s") + " per week. Max " + s.maxOpenPositions + " open. Total open risk ≤ $" + s.maxTotalOpenRisk + ".", "a"],
+          ["Buying power is not permission.", "a"]
+        ]],
+        ["Day 0 — entry", [
+          ["Run the trade ticket. If it fails a rule, don't place it.", "a"],
+          ["Sell the spread at or near the mid.", "a"],
+          ["Immediately place a GTC buy-to-close at " + (100 - tgtPct) + "% of the credit (" + tgtPct + "% profit).", "t"],
+          ["Set a calendar reminder for the " + s.closeAtDTE + "-DTE date (.ics from the ticket).", "a"],
+          ["Log the trade in the journal.", "a"]
+        ]],
+        ["Managing", [
+          ["Exit when the " + tgtPct + "% target fills.", "t"],
+          ["At " + s.closeAtDTE + " DTE, close everything regardless of P&L.", "t"],
+          ["Do NOT stop out defined-risk trades on price.", "t"],
+          ["Log every exit: reason, P&L after fees, rule followed Y/N.", "a"]
+        ]],
+        ["0DTE lab — " + (s.zeroDteEnabled ? "ENABLED" : "DISABLED (main track only)"), s.zeroDteEnabled ? [
+          ["Defined-risk credit spreads only, max loss ≤ $" + s.maxRiskPerTrade + ". One 0DTE trade per day, counted toward open positions.", "a"],
+          ["Format A: enter after ~9:00 AM CT, flat by 10:00 AM CT. Format B: 1st-triggers-OCO bracket; treat the full max loss as real; prefer XSP.", "a"],
+          ["No long OTM 'lotto' options.", "a"]
+        ] : [["Not trading 0DTE. Revisit after 30+ logged main-track trades.", "a"]]]
+      ];
+    }
+
+    function render() {
+      var s = read();
+      C.saveSettings(s);
+      document.getElementById("saved").textContent = "Saved in this browser.";
+      var html = '<h1 style="margin-top:0">' + (s.traderName ? C.esc(s.traderName) + "'s " : "My ") + "Rulebook — Set It, Manage It, Repeat</h1>" +
+        '<p class="small muted">Generated ' + C.prettyDate(C.today()) + ". Labels: " + B.s + " Sosnoff's stated view · " + B.t + " tastylive research · " + B.a + " course adaptation. Learning first, earning second.</p>";
+      rules(s).forEach(function (sec) {
+        html += "<h2>" + C.esc(sec[0]) + "</h2><ol>" + sec[1].map(function (r) { return "<li>" + C.esc(r[0]) + " " + B[r[1]] + "</li>"; }).join("") + "</ol>";
+      });
+      html += '<p class="small"><strong>Educational only — not personalized financial advice.</strong> Sources: see the course <a href="sources.html">sources page</a>.</p>';
+      out.innerHTML = html;
+    }
+    function asText() {
+      var s = read();
+      var L = { s: "[Sosnoff]", t: "[tastylive]", a: "[Adaptation]" };
+      var t = (s.traderName ? s.traderName + "'s " : "My ") + "Rulebook — Set It, Manage It, Repeat\n\n";
+      rules(s).forEach(function (sec) {
+        t += sec[0].toUpperCase() + "\n" + sec[1].map(function (r, i) { return "  " + (i + 1) + ". " + r[0] + " " + L[r[1]]; }).join("\n") + "\n\n";
+      });
+      return t + "Educational only — not personalized financial advice.\n";
+    }
+
+    fill(C.getSettings());
+    form.addEventListener("input", render);
+    form.addEventListener("change", render);
+    document.getElementById("print").addEventListener("click", function () { window.print(); });
+    document.getElementById("dl").addEventListener("click", function () { C.download("my-rulebook.txt", asText(), "text/plain"); });
+    document.getElementById("defaults").addEventListener("click", function () {
+      if (!confirm("Reset all limits to the course defaults?")) return;
+      fill(C.DEFAULT_SETTINGS); render();
+    });
+    render();
+  })();
+  </script>
+</body>
+</html>

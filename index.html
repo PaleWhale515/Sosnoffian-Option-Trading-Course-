@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Premium Selling the Sosnoff Way — Set It, Manage It, Repeat</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Premium Selling the Sosnoff Way — Set It, Manage It, Repeat</h1>
+    <p>A self-paced options course for one trader: a Schwab margin account (~$3,000), thinkorswim, Level 2 (Spreads) approval pending, no screen time during the workday. The goal is a routine you can follow in the <strong>8:30–10:00 AM CT</strong> window: select a trade, set it, manage it intermittently, repeat. <strong>Learning first, earning second.</strong></p>
+
+    <div class="card" id="next-step"></div>
+
+    <h2>How the course is organized</h2>
+    <div class="grid">
+      <div class="card"><h3><span class="badge main">Main / recommended</span><br>45-DTE routine</h3><p class="small">Modules 01–07. Defined-risk credit spreads, 50% profit target, close at 21 DTE. This is the core of the course.</p></div>
+      <div class="card"><h3><span class="badge lab">Lab / higher variance</span><br>0DTE lab</h3><p class="small">Modules 08–10. Why lotto buying loses, 0DTE mechanics, and two rule-bound formats that fit the morning window.</p></div>
+      <div class="card"><h3>Compare &amp; account</h3><p class="small">Module 11 compares the approaches using sourced statistics only. Module 12 covers Schwab approval levels, margin, and the 2026 FINRA Rule 4210 change.</p></div>
+    </div>
+
+    <h2>Modules</h2>
+    <div class="table-wrap"><table id="module-table"><thead><tr><th>#</th><th>Module</th><th>Track</th><th>Quiz</th></tr></thead><tbody></tbody></table></div>
+
+    <h2>Tools</h2>
+    <div class="grid">
+      <a class="card" href="placement.html"><h3>Placement quiz</h3><p class="small muted">15 questions. Start here to see which modules to focus on.</p></a>
+      <a class="card" href="ticket.html"><h3>Trade ticket</h3><p class="small muted">Max profit/loss, breakeven, breakeven win rate, 50% GTC price, 21-DTE date, warnings, .ics reminder.</p></a>
+      <a class="card" href="payoff.html"><h3>Payoff diagrams</h3><p class="small muted">Every structure from Modules 03 and 10.</p></a>
+      <a class="card" href="journal.html"><h3>Trade journal</h3><p class="small muted">In-browser log with CSV import/export and a CSV template.</p></a>
+      <a class="card" href="scorecard.html"><h3>Scorecard</h3><p class="small muted">Win rate, average win/loss, expectancy, days held — per track. Lockout and −$300 checks.</p></a>
+      <a class="card" href="rulebook.html"><h3>Rulebook builder</h3><p class="small muted">Turn the course rules into a printable one-page personal rulebook.</p></a>
+    </div>
+
+    <h2>Attribution labels</h2>
+    <p>Every principle is labeled so you know where it comes from:</p>
+    <ul>
+      <li><span class="badge sosnoff">Sosnoff's view</span> — Tom Sosnoff's stated view, with a link to where he said it.</li>
+      <li><span class="badge tasty">tastylive research</span> — a tastylive study or segment, with a link.</li>
+      <li><span class="badge adapt">Course adaptation</span> — a rule this course made to fit your account, schedule or structures.</li>
+      <li><span class="badge unverified">Unverified</span> — could not be confirmed against a primary source while building the course. See <a href="TODO.md">TODO.md</a>.</li>
+      <li><span class="badge illus">Illustrative</span> — example numbers, not market quotes or statistics.</li>
+    </ul>
+
+    <h2>Your progress</h2>
+    <p class="small muted">Quiz scores and journal entries are saved only in this browser (localStorage). Clearing site data erases them — export your journal as CSV regularly.</p>
+    <div class="actions"><button type="button" class="danger" id="reset-progress">Reset quiz scores</button></div>
+  </main>
+  <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. Options involve risk and are not suitable for all investors; read the OCC's <a href="https://www.theocc.com/company-information/documents-and-archives/options-disclosure-document" target="_blank" rel="noopener">Characteristics and Risks of Standardized Options</a>. All worked-example numbers are illustrative. Verify broker and regulatory details with Schwab and FINRA before acting. This course is not affiliated with or endorsed by Tom Sosnoff, tastylive, Charles Schwab, or Cboe.</footer>
+  <script src="js/common.js"></script>
+  <script src="js/quiz.js"></script>
+  <script>
+  (function () {
+    var C = window.Course;
+    var trackLabel = { main: '<span class="badge main">Main</span>', lab: '<span class="badge lab">Lab</span>', compare: "Compare", account: "Account" };
+    var tbody = document.querySelector("#module-table tbody");
+    var done = 0;
+    C.MODULES.forEach(function (m) {
+      var s = window.Quiz.getScore("module-" + m.id);
+      if (s) done++;
+      var pill = s ? '<span class="progress-pill' + (s.best === s.total ? " done" : "") + '">best ' + s.best + "/" + s.total + "</span>" : '<span class="muted small">not taken</span>';
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td>" + m.id + '</td><td><a href="module.html?m=' + m.id + '">' + C.esc(m.title) + "</a></td><td>" + trackLabel[m.track] + "</td><td>" + pill + "</td>";
+      tbody.appendChild(tr);
+    });
+    var pl = C.load(C.KEYS.placement, null);
+    var next = document.getElementById("next-step");
+    if (!pl) {
+      next.innerHTML = "<h3>Start here</h3><p>Take the 15-question <a href=\"placement.html\">placement quiz</a>. It shows which modules to focus on. Then work through Module 01 onward — the main track first.</p>" +
+        '<a class="btn" href="placement.html">Take the placement quiz</a>';
+    } else {
+      var rec = pl.recommend || "01";
+      var mod = C.MODULES.filter(function (m) { return m.id === rec; })[0] || C.MODULES[0];
+      next.innerHTML = "<h3>Your next step</h3><p>Placement score " + pl.score + "/" + pl.total + ". Suggested starting point: <strong>Module " + mod.id + " — " + C.esc(mod.title) + "</strong>. Quizzes taken: " + done + " of " + C.MODULES.length + ".</p>" +
+        '<div class="actions"><a class="btn" href="module.html?m=' + mod.id + '">Go to Module ' + mod.id + '</a><a class="btn secondary" href="placement.html">Retake placement</a></div>';
+    }
+    document.getElementById("reset-progress").addEventListener("click", function () {
+      if (!confirm("Erase all quiz scores (module quizzes and placement) from this browser?")) return;
+      C.MODULES.forEach(function (m) { try { localStorage.removeItem(C.KEYS.quizPrefix + "module-" + m.id); } catch (e) {} });
+      try { localStorage.removeItem(C.KEYS.quizPrefix + "placement"); localStorage.removeItem(C.KEYS.placement); } catch (e) {}
+      location.reload();
+    });
+  })();
+  </script>
+</body>
+</html>

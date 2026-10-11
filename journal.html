@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trade Journal · Premium Selling the Sosnoff Way</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Trade journal</h1>
+    <p>Log every trade — paper and live, main track and 0DTE lab. The <a href="scorecard.html">scorecard</a> reads this log. Data is stored only in this browser; <strong>export CSV regularly</strong> as a backup. Prefer a spreadsheet? Use the <a href="templates/journal-template.csv" download>CSV template</a> and import it here later.</p>
+
+    <form class="card" id="entry-form" autocomplete="off">
+      <div class="form-grid">
+        <label>Entry date<input type="date" name="date" required></label>
+        <label>Track<select name="track"><option value="45DTE">45DTE (main)</option><option value="0DTE">0DTE (lab)</option></select></label>
+        <label>Mode<select name="mode"><option value="paper">paper (paperMoney)</option><option value="live">live</option></select></label>
+        <label>Underlying<input type="text" name="underlying" placeholder="IWM" required></label>
+        <label>Structure<input type="text" name="structure" placeholder="Short put vertical 209/210" list="structures"></label>
+        <label>DTE at entry<input type="number" name="dte" min="0" step="1"></label>
+        <label>IV rank at entry<input type="number" name="iv_rank" min="0" max="100" step="any"></label>
+        <label>Credit ($ total)<input type="number" name="credit" step="0.01" placeholder="22.00"></label>
+        <label>Max loss ($ total)<input type="number" name="max_loss" step="0.01" placeholder="78.00"></label>
+        <label>Exit date<input type="date" name="exit_date"></label>
+        <label>Exit reason<select name="exit_reason"><option value="">— open —</option><option>50% target</option><option>21 DTE</option><option>expired</option><option>other</option></select></label>
+        <label>P&amp;L ($, after fees)<input type="number" name="pnl" step="0.01" placeholder="11.00"></label>
+        <label>Rule followed?<select name="rule_followed"><option value="">—</option><option value="Y">Y</option><option value="N">N</option></select></label>
+      </div>
+      <label style="margin-top:10px">Notes<textarea name="notes" placeholder="Why this trade? What would you do differently?"></textarea></label>
+      <datalist id="structures"><option value="Short put vertical"><option value="Short call vertical"><option value="Iron condor"></datalist>
+      <div class="actions"><button type="submit" id="save">Add trade</button><button type="button" class="secondary" id="clear-form">Clear form</button></div>
+      <div id="form-msg" aria-live="polite"></div>
+    </form>
+
+    <h2>Log <span class="muted small" id="count"></span></h2>
+    <div class="actions">
+      <button type="button" id="export">Export CSV</button>
+      <label class="btn secondary" style="color:var(--accent)">Import CSV<input type="file" id="import" accept=".csv,text/csv" style="display:none"></label>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="import-replace" style="width:auto"> Replace existing on import</label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Entry</th><th>Track</th><th>Underlying</th><th>Structure</th><th class="num">DTE</th><th class="num">IVR</th><th class="num">Credit</th><th class="num">Max loss</th><th>Exit reason</th><th class="num">P&amp;L</th><th>Rule</th><th>Notes</th><th>Exit date</th><th>Mode</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="small muted">Leave the exit fields blank while a trade is open. The scorecard counts only trades with an exit date and P&amp;L.</p>
+  </main>
+  <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. This journal is a learning tool, not a tax or brokerage record; your Schwab statements are the official record.</footer>
+  <script src="js/common.js"></script>
+  <script src="js/journal.js"></script>
+</body>
+</html>

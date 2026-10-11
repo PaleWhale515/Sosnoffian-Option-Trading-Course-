@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Placement Quiz · Premium Selling the Sosnoff Way</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="narrow">
+    <h1>Placement quiz</h1>
+    <p>15 questions across the whole course. Answer honestly — guessing hides the modules you need. Your result recommends where to start and is saved in this browser.</p>
+    <div id="quiz"></div>
+    <div id="result"></div>
+  </main>
+  <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. Options involve risk and are not suitable for all investors. All numbers in questions are illustrative.</footer>
+  <script src="js/common.js"></script>
+  <script src="js/md.js"></script>
+  <script src="js/quiz.js"></script>
+  <script>
+  (function () {
+    var C = window.Course;
+    var Q = [
+      { m: "01", q: "XYZ is at $50. A $47 put costs $0.40. Its intrinsic value is…", options: ["$0.40", "$3.00", "$0", "$2.60"], answer: 2, explain: "The put is out of the money, so intrinsic value is $0; the $0.40 is all extrinsic. (Module 01)" },
+      { m: "01", q: "Which can be assigned early?", options: ["A short XSP put", "A short SPY put", "Neither", "Both"], answer: 1, explain: "SPY options are American-style; XSP is European. (Module 01)" },
+      { m: "01", q: "A short put vertical is typically…", options: ["Long gamma, short theta", "Short gamma, long theta", "Long vega", "Delta-neutral always"], answer: 1, explain: "Credit spreads collect time decay (positive theta) and are short gamma. (Module 01)" },
+      { m: "02", q: "IV 30, past-year IV range 20–60. IV rank?", options: ["25", "30", "50", "70"], answer: 0, explain: "(30−20)/(60−20) = 25. (Module 02)" },
+      { m: "02", q: "Why do premium sellers prefer elevated IV rank?", options: ["Options are cheaper", "More credit for the same risk, and IV tends to exceed realized volatility on average", "No risk", "Lower fees"], answer: 1, explain: "Higher credit per unit of risk and the variance risk premium. (Module 02)" },
+      { m: "03", q: "Iron condor, both sides $1 wide, $0.40 total credit. Max loss?", options: ["$40", "$60", "$160", "$200"], answer: 1, explain: "Only one side can lose: $1.00 − $0.40 = $60. (Module 03)" },
+      { m: "03", q: "Which structure needs Level 3 approval?", options: ["Short put vertical", "Iron condor", "Short strangle", "Short call vertical"], answer: 2, explain: "Strangles (and jade lizards) include uncovered options. (Module 03)" },
+      { m: "04", q: "Earnings fall 3 days before your 21-DTE close date. You…", options: ["Enter anyway", "Skip the trade", "Use 2 contracts", "Buy a lotto call too"], answer: 1, explain: "Never hold through earnings. (Module 04)" },
+      { m: "05", q: "Credit $0.30. Your immediate GTC buy-to-close price?", options: ["$0.30", "$0.15", "$0.60", "$0.10"], answer: 1, explain: "50% of the credit. (Module 05)" },
+      { m: "05", q: "Your defined-risk spread is down $45 with 30 DTE left. You…", options: ["Stop out", "Double down", "Wait: close at the 50% target or 21 DTE", "Roll wider"], answer: 2, explain: "No price stops on defined risk; exit at target or 21 DTE. (Module 05)" },
+      { m: "06", q: "Win rate 75%, average win $12, average loss $30. Expectancy?", options: ["+$1.50", "+$9.00", "−$1.50", "+$4.50"], answer: 0, explain: "0.75 × 12 − 0.25 × 30 = 9 − 7.5 = +$1.50. (Module 06)" },
+      { m: "07", q: "$20 credit, $80 risk, 50% profit-taking, losers at max. Breakeven win rate?", options: ["80%", "88.9%", "50%", "20%"], answer: 1, explain: "80 ÷ (10 + 80) = 88.9%. (Module 07)" },
+      { m: "08", q: "What did Beckmeyer, Branger & Gayda find about retail 0DTE SPX traders in aggregate?", options: ["Large profits", "They lost money", "Exact breakeven", "They only sold spreads"], answer: 1, explain: "In aggregate, retail traders lost money. (Module 08)" },
+      { m: "09", q: "XSP options are…", options: ["American, share-settled", "European, cash-settled, 1/10 SPX", "Identical to SPY", "Only monthly"], answer: 1, explain: "Per Cboe. (Module 09)" },
+      { m: "12", q: "Under the 2026 FINRA Rule 4210 change, the $25,000 PDT minimum…", options: ["Still applies", "Was eliminated; intraday margin standards replace it", "Was raised", "Applies only to 0DTE"], answer: 1, explain: "Effective June 4, 2026 (Regulatory Notice 26-10). (Module 12)" }
+    ];
+    var result = document.getElementById("result");
+    window.Quiz.mount(document.getElementById("quiz"), {
+      id: "placement",
+      title: "Placement quiz (15 questions)",
+      questions: Q,
+      onDone: function (score, total, answers) {
+        var missed = {};
+        Q.forEach(function (q, i) { if (answers[i] !== q.answer) missed[q.m] = true; });
+        var missedIds = Object.keys(missed).sort();
+        var recommend = missedIds[0] || "05";
+        C.save(C.KEYS.placement, { score: score, total: total, recommend: recommend, missed: missedIds, date: new Date().toISOString() });
+        var mods = C.MODULES.filter(function (m) { return missed[m.id]; });
+        var rec = C.MODULES.filter(function (m) { return m.id === recommend; })[0];
+        var html = '<div class="card"><h3>Your placement</h3><p>Score: <strong>' + score + "/" + total + "</strong>.</p>";
+        if (mods.length) {
+          html += "<p>Focus on these modules:</p><ul>" + mods.map(function (m) {
+            return '<li><a href="module.html?m=' + m.id + '">Module ' + m.id + " — " + C.esc(m.title) + "</a></li>";
+          }).join("") + "</ul>";
+        } else {
+          html += "<p>All correct. Still read Module 05 (the routine) and Module 12 (account rules) before trading in paperMoney.</p>";
+        }
+        html += '<p class="small muted">Even with a high score, work through the main track in order — the routine depends on all of it.</p>' +
+          '<a class="btn" href="module.html?m=' + rec.id + '">Start with Module ' + rec.id + "</a></div>";
+        result.innerHTML = html;
+        result.scrollIntoView({ behavior: "smooth" });
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
