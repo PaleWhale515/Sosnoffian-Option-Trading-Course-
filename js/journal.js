@@ -133,7 +133,17 @@
   });
   document.getElementById("clear-form").addEventListener("click", resetForm);
   document.getElementById("export").addEventListener("click", function () {
-    C.download("trade-journal-" + C.fmtDate(C.today()) + ".csv", toCSV(all()), "text/csv");
+    C.download("trade-journal-" + C.fmtDate(C.today()) + ".csv", toCSV(all()), "text/csv").catch(function () {
+      document.getElementById("form-msg").innerHTML = '<div class="alert warn">The file was not saved. Use “Copy CSV” instead.</div>';
+    });
+  });
+  document.getElementById("copy-csv").addEventListener("click", function () {
+    var btn = this, box = document.getElementById("csv-text");
+    box.value = toCSV(all());
+    C.copyText(box.value, box).then(function (ok) {
+      btn.textContent = ok ? "Copied" : "Select and copy the text below";
+      setTimeout(function () { btn.textContent = "Copy CSV"; }, 2500);
+    });
   });
   document.getElementById("import").addEventListener("change", function (e) {
     var f = e.target.files[0];
@@ -154,7 +164,7 @@
 
   resetForm();
   var pre = new URLSearchParams(location.search).get("prefill");
-  if (!pre && location.hash === "#prefill") {
+  if (!pre && /prefill$/.test(location.hash)) {
     try { pre = sessionStorage.getItem("sosnoff.prefill"); sessionStorage.removeItem("sosnoff.prefill"); } catch (err) { pre = null; }
   }
   if (pre) {

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Today · Premium Selling the Sosnoff Way</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .chips { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); margin: 12px 0; }
+    .chip { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+    .chip span { display: block; font-size: 12px; color: var(--muted); }
+    .chip b { display: block; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+    .chip small { display: block; font-size: 12px; color: var(--muted); }
+    .chip.good { border-left-color: var(--good); }
+    .chip.warn { border-left-color: var(--warn); }
+    .chip.bad { border-left-color: var(--bad); }
+    ul.checklist.plain { list-style: none; padding: 0; margin: 0; }
+    label.check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; color: var(--text); padding: 6px 0; cursor: pointer; }
+    label.check input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
+    label.check input:checked + span { color: var(--muted); text-decoration: line-through; }
+    .card.dim { opacity: 0.75; }
+  </style>
+</head>
+<body>
+  <main class="narrow">
+    <h1>Today <span class="muted" id="today-date" style="font-size:1rem;font-weight:400"></span></h1>
+    <p>Your once-a-morning routine (Module 05). Open this in the 8:30–10:00 AM CT window, work down the list, then close the platform.</p>
+    <div class="chips" id="status"></div>
+    <h2>What needs doing</h2>
+    <div id="todo"></div>
+    <div id="lists"></div>
+    <div class="actions"><button type="button" class="secondary" id="reset-ticks">Clear today's ticks</button></div>
+    <p class="small muted">Ticks reset each day. Open positions come from the <a href="ticket.html">trade ticket</a>; lockout and live P&amp;L come from the <a href="journal.html">journal</a>; limits come from the <a href="rulebook.html">rulebook</a>.</p>
+  </main>
+  <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. This checklist reflects your own practice rules; it does not monitor the market or your Schwab account.</footer>
+  <script src="js/common.js"></script>
+  <script src="js/checklist.js"></script>
+</body>
+</html>

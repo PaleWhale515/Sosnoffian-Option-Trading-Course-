@@ -38,11 +38,13 @@
           <label>0DTE lab enabled?<select name="zeroDteEnabled"><option value="false">No (default)</option><option value="true">Yes</option></select></label>
         </div>
         <div class="actions">
-          <button type="button" id="print">Print rulebook</button>
+          <button type="button" id="copy">Copy rulebook text</button>
+          <button type="button" class="secondary" id="print">Print rulebook</button>
           <button type="button" class="secondary" id="dl">Download as text</button>
           <button type="button" class="danger" id="defaults">Reset to course defaults</button>
         </div>
         <p class="small muted" id="saved" aria-live="polite"></p>
+        <textarea id="copy-text" class="copy-fallback" readonly hidden aria-label="Rulebook text"></textarea>
       </form>
     </div>
     <article class="card" id="rulebook"></article>
@@ -112,10 +114,12 @@
       ];
     }
 
-    function render() {
+    function render(save) {
       var s = read();
-      C.saveSettings(s);
-      document.getElementById("saved").textContent = "Saved in this browser.";
+      if (save) {
+        C.saveSettings(s);
+        document.getElementById("saved").textContent = "Saved. The trade ticket and scorecard use these limits.";
+      }
       var html = '<h1 style="margin-top:0">' + (s.traderName ? C.esc(s.traderName) + "'s " : "My ") + "Rulebook — Set It, Manage It, Repeat</h1>" +
         '<p class="small muted">Generated ' + C.prettyDate(C.today()) + ". Labels: " + B.s + " Sosnoff's stated view · " + B.t + " tastylive research · " + B.a + " course adaptation. Learning first, earning second.</p>";
       rules(s).forEach(function (sec) {
@@ -137,10 +141,21 @@
     fill(C.getSettings());
     form.addEventListener("input", render);
     form.addEventListener("change", render);
+    if (C.hosted) document.getElementById("print").hidden = true; // printing is blocked in the hosted viewer
     document.getElementById("print").addEventListener("click", function () { window.print(); });
-    document.getElementById("dl").addEventListener("click", function () { C.download("my-rulebook.txt", asText(), "text/plain"); });
+    document.getElementById("dl").addEventListener("click", function () {
+      C.download("my-rulebook.txt", asText(), "text/plain").catch(function () { /* viewer declined or saving unavailable */ });
+    });
+    document.getElementById("copy").addEventListener("click", function () {
+      var btn = this, box = document.getElementById("copy-text");
+      box.value = asText();
+      C.copyText(box.value, box).then(function (ok) {
+        btn.textContent = ok ? "Copied — paste it into Notes or a message" : "Select and copy the text below";
+        setTimeout(function () { btn.textContent = "Copy rulebook text"; }, 3000);
+      });
+    });
     C.armConfirm(document.getElementById("defaults"), function () {
-      fill(C.DEFAULT_SETTINGS); render();
+      fill(C.DEFAULT_SETTINGS); render(true);
     });
     render();
   })();

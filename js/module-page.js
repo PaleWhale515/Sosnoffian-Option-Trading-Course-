@@ -7,7 +7,7 @@
   var params = new URLSearchParams(location.search);
   var hm = /^#m(\d\d)$/.exec(location.hash);
   var id = params.get("m") || (hm && hm[1]) || "01";
-  window.addEventListener("hashchange", function () { if (/^#m\d\d$/.test(location.hash)) location.reload(); });
+  if (!window.Shell) window.addEventListener("hashchange", function () { if (/^#m\d\d$/.test(location.hash)) location.reload(); });
   var idx = C.MODULES.findIndex(function (m) { return m.id === id; });
   var main = document.getElementById("content");
 

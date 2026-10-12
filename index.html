@@ -25,8 +25,9 @@
 
     <h2>Tools</h2>
     <div class="grid">
+      <a class="card" href="checklist.html"><h3>Today</h3><p class="small muted">Your once-a-morning routine: what needs closing, whether an entry is allowed, and tick-off checklists.</p></a>
       <a class="card" href="placement.html"><h3>Placement quiz</h3><p class="small muted">15 questions. Start here to see which modules to focus on.</p></a>
-      <a class="card" href="ticket.html"><h3>Trade ticket</h3><p class="small muted">Max profit/loss, breakeven, breakeven win rate, 50% GTC price, 21-DTE date, warnings, .ics reminder.</p></a>
+      <a class="card" href="ticket.html"><h3>Trade ticket</h3><p class="small muted">Max profit/loss, breakeven, breakeven win rate, 50% GTC price, 21-DTE date, warnings, calendar reminder.</p></a>
       <a class="card" href="payoff.html"><h3>Payoff diagrams</h3><p class="small muted">Every structure from Modules 03 and 10.</p></a>
       <a class="card" href="journal.html"><h3>Trade journal</h3><p class="small muted">In-browser log with CSV import/export and a CSV template.</p></a>
       <a class="card" href="scorecard.html"><h3>Scorecard</h3><p class="small muted">Win rate, average win/loss, expectancy, days held — per track. Lockout and −$300 checks.</p></a>
@@ -44,43 +45,17 @@
     </ul>
 
     <h2>Your progress</h2>
-    <p class="small muted">Quiz scores and journal entries are saved only in this browser (localStorage). Clearing site data erases them — export your journal as CSV regularly.</p>
+    <p class="small muted">On claude.ai, your journal, open positions, rulebook settings, quiz scores and checklist sync to your account, so your phone and computer show the same data (the header shows the sync status). Opened from a downloaded copy, data stays in that browser only. Either way, export or copy your journal CSV now and then as a backup.</p>
     <div class="actions"><button type="button" class="danger" id="reset-progress">Reset quiz scores</button></div>
   </main>
   <footer class="disclaimer"><strong>Disclaimer:</strong> Educational only — not personalized financial advice. Options involve risk and are not suitable for all investors; read the OCC's <a href="https://www.theocc.com/company-information/documents-and-archives/options-disclosure-document" target="_blank" rel="noopener">Characteristics and Risks of Standardized Options</a>. All worked-example numbers are illustrative. Verify broker and regulatory details with Schwab and FINRA before acting. This course is not affiliated with or endorsed by Tom Sosnoff, tastylive, Charles Schwab, or Cboe.</footer>
+  <script src="js/sync.js"></script>
   <script src="js/common.js"></script>
+  <script src="js/md.js"></script>
   <script src="js/quiz.js"></script>
-  <script>
-  (function () {
-    var C = window.Course;
-    var trackLabel = { main: '<span class="badge main">Main</span>', lab: '<span class="badge lab">Lab</span>', compare: "Compare", account: "Account" };
-    var tbody = document.querySelector("#module-table tbody");
-    var done = 0;
-    C.MODULES.forEach(function (m) {
-      var s = window.Quiz.getScore("module-" + m.id);
-      if (s) done++;
-      var pill = s ? '<span class="progress-pill' + (s.best === s.total ? " done" : "") + '">best ' + s.best + "/" + s.total + "</span>" : '<span class="muted small">not taken</span>';
-      var tr = document.createElement("tr");
-      tr.innerHTML = "<td>" + m.id + '</td><td><a href="' + C.moduleHref(m.id) + '\">' + C.esc(m.title) + "</a></td><td>" + trackLabel[m.track] + "</td><td>" + pill + "</td>";
-      tbody.appendChild(tr);
-    });
-    var pl = C.load(C.KEYS.placement, null);
-    var next = document.getElementById("next-step");
-    if (!pl) {
-      next.innerHTML = "<h3>Start here</h3><p>Take the 15-question <a href=\"placement.html\">placement quiz</a>. It shows which modules to focus on. Then work through Module 01 onward — the main track first.</p>" +
-        '<a class="btn" href="placement.html">Take the placement quiz</a>';
-    } else {
-      var rec = pl.recommend || "01";
-      var mod = C.MODULES.filter(function (m) { return m.id === rec; })[0] || C.MODULES[0];
-      next.innerHTML = "<h3>Your next step</h3><p>Placement score " + pl.score + "/" + pl.total + ". Suggested starting point: <strong>Module " + mod.id + " — " + C.esc(mod.title) + "</strong>. Quizzes taken: " + done + " of " + C.MODULES.length + ".</p>" +
-        '<div class="actions"><a class="btn" href="' + C.moduleHref(mod.id) + '\">Go to Module ' + mod.id + '</a><a class="btn secondary" href="placement.html">Retake placement</a></div>';
-    }
-    C.armConfirm(document.getElementById("reset-progress"), function () {
-      C.MODULES.forEach(function (m) { try { localStorage.removeItem(C.KEYS.quizPrefix + "module-" + m.id); } catch (e) {} });
-      try { localStorage.removeItem(C.KEYS.quizPrefix + "placement"); localStorage.removeItem(C.KEYS.placement); } catch (e) {}
-      location.reload();
-    });
-  })();
-  </script>
+  <script src="js/payoff.js"></script>
+  <script src="js/modules-bundle.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/home.js"></script>
 </body>
 </html>

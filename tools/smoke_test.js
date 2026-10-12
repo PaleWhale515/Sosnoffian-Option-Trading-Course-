@@ -7,7 +7,7 @@ const http = require("http");
 const fs = require("fs");
 
 const ROOT = path.resolve(__dirname, "..");
-const PAGES = ["index.html", "placement.html", "ticket.html", "payoff.html", "journal.html", "scorecard.html", "rulebook.html", "sources.html"];
+const PAGES = ["index.html", "checklist.html", "placement.html", "ticket.html", "payoff.html", "journal.html", "scorecard.html", "rulebook.html", "sources.html"];
 const MODULE_IDS = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
 let failures = 0;
 function check(cond, msg) { if (!cond) { failures++; console.log("  FAIL:", msg); } else console.log("  ok:", msg); }
@@ -204,9 +204,79 @@ async function openPage(ctx, url) {
   check(/\$80 per-trade limit/.test(await page.locator("#out").textContent()), "payoff tool uses rulebook limit");
   await page.close();
 
+  // Single-page shell over http, with a simulated claude.ai viewer (fake db/user/downloads)
+  console.log("\n== single-page shell + sync (http, simulated viewer) ==");
+  const store = {};
+  const saved = [];
+  async function hostedContext() {
+    const c = await browser.newContext();
+    await c.exposeBinding("__dbGet", (_s, path) => Object.entries(store).filter(([k]) => k.startsWith(path + "/") && k.slice(path.length + 1).indexOf("/") < 0).map(([k, v]) => ({ id: k.split("/").pop(), data: v })));
+    await c.exposeBinding("__dbSet", (_s, path, data) => { store[path] = data; });
+    await c.exposeBinding("__save", (_s, name) => { saved.push(name); });
+    await c.addInitScript(() => {
+      const snapDoc = (d) => ({ id: d.id, exists: true, data: () => d.data, metadata: {} });
+      const db = {
+        collection: (path) => ({ get: async () => { const docs = (await window.__dbGet(path)).map(snapDoc); return { docs, size: docs.length, empty: !docs.length }; } }),
+        doc: (path) => ({ set: (data) => window.__dbSet(path, JSON.parse(JSON.stringify(data))) }),
+      };
+      const caps = { db, user: { id: async () => "user-1" }, downloads: { save: async ({ filename }) => { await window.__save(filename); return { status: "saved" }; } } };
+      window.claude = { use: (n) => Promise.resolve(caps[n] || null) };
+    });
+    return c;
+  }
+  const hA = await hostedContext();
+  ({ page, errors } = await openPage(hA, bases.http + "index.html"));
+  await page.waitForFunction(() => /Synced/.test(document.getElementById("sync-pill").textContent), null, { timeout: 5000 }).catch(() => {});
+  check(/Synced/.test(await page.locator("#sync-pill").textContent()), "sync pill shows synced");
+  await page.click('nav.main-nav a[href="ticket.html"]');
+  await page.waitForSelector("#example");
+  check(page.url().endsWith("#ticket"), "shell routes nav link to #ticket");
+  await page.click("#example");
+  check(/Passes your rulebook/.test(await page.locator("#results").textContent()), "ticket works inside the shell");
+  check(await page.locator("#ics").isHidden() && /calendar\.google\.com/.test(await page.locator("#gcal").getAttribute("href")), "hosted ticket: Google Calendar link instead of .ics");
+  await page.click("#save-open");
+  await page.click('a[href="journal.html#prefill"]');
+  await page.waitForSelector("#entry-form");
+  check(await page.inputValue('[name="underlying"]') === "IWM", "Log exit pre-fills the journal");
+  await page.fill('[name="pnl"]', "9.5");
+  await page.selectOption('[name="exit_reason"]', "50% target");
+  await page.click("#save");
+  const [csvSave] = await Promise.all([page.waitForTimeout(300), page.click("#export")]);
+  await page.waitForTimeout(300);
+  check(saved.some((f) => /\.csv$/.test(f)), "hosted CSV export goes through the viewer's save prompt");
+  await page.click('nav.main-nav a[href="checklist.html"]');
+  await page.waitForSelector("#status .chip");
+  check(/IWM/.test(await page.locator("#todo").textContent()), "Today page lists the open position");
+  await page.click("#ck-g1");
+  await page.goto(bases.http + "index.html#m05");
+  await page.waitForSelector(".quiz");
+  check(/The 45-DTE Routine/.test(await page.title()), "deep link #m05 opens Module 05");
+  await page.click('.module-nav a.btn:not(.secondary)');
+  await page.waitForFunction(() => location.hash === "#m06");
+  await page.waitForSelector(".quiz");
+  check(/Sizing/.test(await page.locator("main h1").textContent()), "next-module link routes to #m06");
+  await page.goto(bases.http + "index.html#payoff.iron-condor");
+  await page.waitForSelector("#out svg");
+  check(await page.inputValue("#structure") === "iron-condor", "#payoff.iron-condor selects the iron condor");
+  await page.waitForTimeout(1000);
+  check(errors.length === 0, "shell: no JS errors " + errors.join(" | "));
+  check(Object.keys(store).some((k) => /sosnoff\.journal$/.test(k)), "journal synced to the account store");
+  await hA.close();
+
+  const hB = await hostedContext(); // a second device: empty browser, same account
+  ({ page, errors } = await openPage(hB, bases.http + "index.html#journal"));
+  await page.waitForFunction(() => document.querySelectorAll("#rows tr").length && /IWM/.test(document.getElementById("rows").textContent), null, { timeout: 5000 }).catch(() => {});
+  check(/IWM/.test(await page.locator("#rows").textContent()), "second device sees the synced journal");
+  await page.goto(bases.http + "index.html#checklist");
+  await page.waitForSelector("#ck-g1");
+  await page.waitForTimeout(500);
+  check(await page.isChecked("#ck-g1"), "second device sees today's synced checklist tick");
+  check(errors.length === 0, "second device: no JS errors " + errors.join(" | "));
+  await hB.close();
+
   // Mobile width: no horizontal scroll on the course page
   const mctx = await browser.newContext({ viewport: { width: 375, height: 800 } });
-  for (const p of ["index.html", "module.html?m=05", "ticket.html"]) {
+  for (const p of ["index.html", "module.html?m=05", "ticket.html", "checklist.html", "journal.html"]) {
     const mp = await mctx.newPage();
     await mp.goto(base + p);
     await mp.waitForTimeout(150);

@@ -81,7 +81,7 @@
     var exp = C.parseDate($("expiration").value);
     if (!p || !entry || !exp) {
       out.innerHTML = '<p class="muted">Enter strikes, credit, entry date and expiration to see results.</p>';
-      $("ics").disabled = true; $("save-open").disabled = true; last = null;
+      $("ics").disabled = true; $("save-open").disabled = true; $("copy-reminder").disabled = true; $("gcal").hidden = true; last = null;
       return;
     }
     var strikeErr = validateStrikes(key, p);
@@ -165,6 +165,10 @@
       P.svgChart(res, p.spot);
 
     $("ics").disabled = !!strikeErr;
+    $("copy-reminder").disabled = !!strikeErr;
+    $("gcal").href = gcalUrl(last);
+    $("gcal").hidden = !!strikeErr;
+    $("reminder-text").value = reminderSummary(last) + "\nDate: " + C.prettyDate(t21.date) + ", 8:30 AM Central\n" + reminderDetails(last);
     $("save-open").disabled = !!strikeErr;
     $("save-open").textContent = blocking ? "Save as open position (rule override)" : "Save as open position";
   }
@@ -178,15 +182,24 @@
     return out.join("\r\n");
   }
   function ymd(d) { return C.fmtDate(d).replace(/-/g, ""); }
-  function buildICS(t) {
-    var d = C.parseDate(t.close21);
-    var stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
-    var summary = "CLOSE at " + (+S.closeAtDTE || 21) + " DTE: " + t.underlying + " " + t.strikes + " " + t.structure;
-    var desc = "Rulebook: close this position today regardless of P&L unless the 50% GTC order already filled.\n" +
+  function reminderSummary(t) {
+    return "CLOSE at " + (+S.closeAtDTE || 21) + " DTE: " + t.underlying + " " + t.strikes + " " + t.structure;
+  }
+  function reminderDetails(t) {
+    return "Rulebook: close this position today regardless of P&L unless the 50% GTC order already filled.\n" +
       "Underlying: " + t.underlying + "\nStructure: " + t.structure + " " + t.strikes + "\nContracts: " + t.qty +
       "\nCredit: " + C.money(t.credit) + " per share\nGTC buy-to-close: " + C.money(t.gtc) +
       "\nMax loss: " + C.money(t.maxLoss) + "\nEntered: " + t.entry + "\nExpiration: " + t.expiration +
       "\nAfter closing, log the trade in the journal.\nEducational only - not personalized financial advice.";
+  }
+  function gcalUrl(t) {
+    return C.googleCalendarUrl(reminderSummary(t), t.close21, "0830", "0900", reminderDetails(t));
+  }
+  function buildICS(t) {
+    var d = C.parseDate(t.close21);
+    var stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+    var summary = reminderSummary(t);
+    var desc = reminderDetails(t);
     var lines = [
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Premium Selling the Sosnoff Way//Trade Ticket//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
       "BEGIN:VTIMEZONE", "TZID:America/Chicago",
@@ -220,7 +233,7 @@
         var pre = encodeURIComponent(JSON.stringify({ date: r.entry, track: "45DTE", underlying: r.underlying, structure: r.structure + " " + r.strikes, dte: r.dte, iv_rank: r.ivr, credit: (r.credit * 100 * r.qty).toFixed(2), max_loss: r.maxLoss.toFixed(2) }));
         return "<tr><td>" + C.esc(r.underlying) + "</td><td>" + C.esc(r.structure + " " + r.strikes) + '</td><td class="num">' + C.money(r.credit) +
           '</td><td class="num">' + C.money(r.maxLoss, 0) + '</td><td class="num">' + C.money(r.gtc) + "</td><td>" + C.prettyDate(due) + flag +
-          '</td><td><a href="journal.html#prefill" data-pre="' + pre + '">Log exit</a> · <button type="button" class="danger" data-rm="' + i + '">Remove</button></td></tr>';
+          '</td><td><a href="' + C.esc(gcalUrl(r)) + '" target="_blank" rel="noopener">Calendar</a> · <a href="journal.html#prefill" data-pre="' + pre + '">Log exit</a> · <button type="button" class="danger" data-rm="' + i + '">Remove</button></td></tr>';
       }).join("") + "</tbody></table></div>";
     box.querySelectorAll("[data-pre]").forEach(function (a) {
       a.addEventListener("click", function () {
@@ -250,7 +263,16 @@
     document.querySelectorAll("#ticket input").forEach(function (i) { i.addEventListener("input", calc); });
     $("ics").addEventListener("click", function () {
       if (!last) return;
-      C.download("close-21dte-" + last.underlying + "-" + last.close21 + ".ics", buildICS(last), "text/calendar");
+      C.download("close-21dte-" + last.underlying + "-" + last.close21 + ".ics", buildICS(last), "text/calendar").catch(function () { /* not saved */ });
+    });
+    if (C.hosted) $("ics").hidden = true; // the hosted viewer can't save .ics files; use the calendar link
+    $("copy-reminder").addEventListener("click", function () {
+      if (!last) return;
+      var btn = $("copy-reminder");
+      C.copyText($("reminder-text").value, $("reminder-text")).then(function (ok) {
+        btn.textContent = ok ? "Copied" : "Select and copy the text below";
+        setTimeout(function () { btn.textContent = "Copy reminder details"; }, 2500);
+      });
     });
     $("save-open").addEventListener("click", function () {
       if (!last) return;

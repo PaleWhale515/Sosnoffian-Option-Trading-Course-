@@ -31,9 +31,12 @@
       <div class="form-grid" id="strikes"></div>
       <div class="actions">
         <button type="button" class="secondary" id="example">Load illustrative example</button>
-        <button type="button" id="ics" disabled>Download 21-DTE reminder (.ics)</button>
+        <a class="btn" id="gcal" href="#" target="_blank" rel="noopener" hidden>Add 21-DTE reminder to Google Calendar</a>
+        <button type="button" class="secondary" id="copy-reminder" disabled>Copy reminder details</button>
+        <button type="button" class="secondary" id="ics" disabled>Download 21-DTE reminder (.ics)</button>
         <button type="button" class="secondary" id="save-open" disabled>Save as open position</button>
       </div>
+      <textarea id="reminder-text" class="copy-fallback" readonly hidden aria-label="Reminder details"></textarea>
     </form>
 
     <section class="card" id="results" aria-live="polite"></section>
@@ -47,7 +50,7 @@
       <li>Trade tab → choose the ~45-DTE expiration → right-click the short strike → Sell → Vertical (or Iron Condor). Check the long strike is $1 away.</li>
       <li>Set a limit price at or near the mid. Confirm the max loss on the order confirmation matches this ticket.</li>
       <li>After the fill: create a buy-to-close order for the same spread at the GTC price above, time-in-force <strong>GTC</strong>.</li>
-      <li>Import the .ics file into your calendar.</li>
+      <li>Add the 21-DTE reminder to your calendar (Google Calendar link, or copy the details into any calendar app).</li>
       <li>Log the entry in the <a href="journal.html">journal</a>.</li>
     </ol>
     <p class="small muted">Menu names can differ between thinkorswim versions <span class="badge unverified">Unverified</span>.</p>

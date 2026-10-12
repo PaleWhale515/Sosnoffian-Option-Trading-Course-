@@ -58,7 +58,10 @@
   }
   function save(key, value) {
     try {
-      window.localStorage.setItem(key, JSON.stringify(value));
+      var raw = JSON.stringify(value);
+      if (window.localStorage.getItem(key) === raw) return true; // unchanged: nothing to save or sync
+      window.localStorage.setItem(key, raw);
+      if (window.Sync && key.indexOf("sosnoff.") === 0) window.Sync.touched(key);
       return true;
     } catch (e) {
       return false;
@@ -113,14 +116,33 @@
 
   var NAV = [
     ["index.html", "Course"],
+    ["checklist.html", "Today"],
     ["placement.html", "Placement quiz"],
     ["ticket.html", "Trade ticket"],
-    ["payoff.html", "Payoff diagrams"],
+    ["payoff.html", "Payoff"],
     ["journal.html", "Journal"],
     ["scorecard.html", "Scorecard"],
     ["rulebook.html", "Rulebook"],
     ["sources.html", "Sources"]
   ];
+
+  function setActiveNav(file) {
+    var here = file === "module.html" ? "index.html" : file;
+    document.querySelectorAll("nav.main-nav a").forEach(function (a) {
+      var on = a.getAttribute("href") === here;
+      a.classList.toggle("active", on);
+      if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+  }
+
+  var SYNC_TEXT = {
+    local: "Saved on this device",
+    connecting: "Connecting…",
+    saving: "Saving…",
+    synced: "Synced to your account",
+    error: "Sync paused — saved on this device",
+    full: "Account storage full — saved on this device"
+  };
 
   function renderChrome() {
     var here = (location.pathname.split("/").pop() || "index.html");
@@ -132,13 +154,23 @@
     }).join("");
     header.innerHTML =
       '<div class="inner"><a class="brand" href="index.html">Premium Selling the Sosnoff Way<small>Set It, Manage It, Repeat</small></a>' +
-      '<nav class="main-nav" aria-label="Main">' + links + "</nav></div>";
+      '<nav class="main-nav" aria-label="Main">' + links + "</nav>" +
+      '<span class="sync-pill" id="sync-pill" title="Where your journal, positions, settings and scores are saved"></span></div>';
     var top = document.createElement("div");
     top.className = "top-disclaimer";
     top.textContent = "Educational only — not personalized financial advice. Practice in paperMoney first.";
     document.body.insertBefore(top, document.body.firstChild);
     document.body.insertBefore(header, top.nextSibling);
+    if (window.Sync) {
+      window.Sync.onStatus(function (s) {
+        var pill = document.getElementById("sync-pill");
+        if (pill) { pill.textContent = SYNC_TEXT[s] || ""; pill.setAttribute("data-state", s); }
+      });
+    }
   }
+
+  /* True inside the claude.ai viewer, where the page can ask for capabilities. */
+  var hosted = !!(window.claude && typeof window.claude.use === "function");
 
   /* Expected-value helpers shared by ticket, module math and scorecard. */
   function breakevenWinRate(avgWin, avgLoss) {
@@ -147,7 +179,15 @@
     return avgLoss / (avgWin + avgLoss);
   }
 
+  /* Save a generated file. In the hosted viewer this goes through the viewer's save prompt
+     (allowed types include csv, txt, md, json); locally it is a normal browser download. */
   function download(filename, text, mime) {
+    if (hosted) {
+      return window.claude.use("downloads").then(function (dl) {
+        if (!dl) throw { code: "unavailable" };
+        return dl.save({ filename: filename, data: text });
+      });
+    }
     var blob = new Blob([text], { type: mime || "text/plain" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -155,6 +195,33 @@
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    return Promise.resolve({ status: "saved" });
+  }
+
+  /* Copy text to the clipboard; if the host refuses, select the fallback element's text instead. */
+  function copyText(text, fallbackEl) {
+    function selectFallback() {
+      if (!fallbackEl) return false;
+      fallbackEl.hidden = false;
+      if (fallbackEl.select) fallbackEl.select();
+      else { var r = document.createRange(); r.selectNodeContents(fallbackEl); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+      return false;
+    }
+    try {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, selectFallback);
+    } catch (e) {
+      return Promise.resolve(selectFallback());
+    }
+  }
+
+  /* Google Calendar "add event" link for the 21-DTE reminder (opens in a new tab; works on phones). */
+  function googleCalendarUrl(title, ymd, startHHMM, endHHMM, details) {
+    var d = ymd.replace(/-/g, "");
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+      "&text=" + encodeURIComponent(title) +
+      "&dates=" + d + "T" + startHHMM + "00/" + d + "T" + endHHMM + "00" +
+      "&ctz=America/Chicago" +
+      "&details=" + encodeURIComponent(details);
   }
 
   /* Two-step confirmation inside the page: first click arms the button, second click acts.
@@ -199,6 +266,10 @@
     today: today,
     breakevenWinRate: breakevenWinRate,
     download: download,
+    copyText: copyText,
+    googleCalendarUrl: googleCalendarUrl,
+    setActiveNav: setActiveNav,
+    hosted: hosted,
     armConfirm: armConfirm,
     moduleHref: moduleHref
   };
