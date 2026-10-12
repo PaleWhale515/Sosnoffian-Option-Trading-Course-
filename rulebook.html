@@ -139,8 +139,7 @@
     form.addEventListener("change", render);
     document.getElementById("print").addEventListener("click", function () { window.print(); });
     document.getElementById("dl").addEventListener("click", function () { C.download("my-rulebook.txt", asText(), "text/plain"); });
-    document.getElementById("defaults").addEventListener("click", function () {
-      if (!confirm("Reset all limits to the course defaults?")) return;
+    C.armConfirm(document.getElementById("defaults"), function () {
       fill(C.DEFAULT_SETTINGS); render();
     });
     render();

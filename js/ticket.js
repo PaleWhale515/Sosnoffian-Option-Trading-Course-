@@ -220,8 +220,13 @@
         var pre = encodeURIComponent(JSON.stringify({ date: r.entry, track: "45DTE", underlying: r.underlying, structure: r.structure + " " + r.strikes, dte: r.dte, iv_rank: r.ivr, credit: (r.credit * 100 * r.qty).toFixed(2), max_loss: r.maxLoss.toFixed(2) }));
         return "<tr><td>" + C.esc(r.underlying) + "</td><td>" + C.esc(r.structure + " " + r.strikes) + '</td><td class="num">' + C.money(r.credit) +
           '</td><td class="num">' + C.money(r.maxLoss, 0) + '</td><td class="num">' + C.money(r.gtc) + "</td><td>" + C.prettyDate(due) + flag +
-          '</td><td><a href="journal.html?prefill=' + pre + '">Log exit</a> · <button type="button" class="danger" data-rm="' + i + '">Remove</button></td></tr>';
+          '</td><td><a href="journal.html#prefill" data-pre="' + pre + '">Log exit</a> · <button type="button" class="danger" data-rm="' + i + '">Remove</button></td></tr>';
       }).join("") + "</tbody></table></div>";
+    box.querySelectorAll("[data-pre]").forEach(function (a) {
+      a.addEventListener("click", function () {
+        try { sessionStorage.setItem("sosnoff.prefill", decodeURIComponent(a.getAttribute("data-pre"))); } catch (err) { /* prefill is a convenience */ }
+      });
+    });
     box.querySelectorAll("[data-rm]").forEach(function (b) {
       b.addEventListener("click", function () {
         var l = openPositions(); l.splice(+b.getAttribute("data-rm"), 1); saveOpen(l); renderOpen(); calc();

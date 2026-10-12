@@ -53,13 +53,13 @@
         var html = '<div class="card"><h3>Your placement</h3><p>Score: <strong>' + score + "/" + total + "</strong>.</p>";
         if (mods.length) {
           html += "<p>Focus on these modules:</p><ul>" + mods.map(function (m) {
-            return '<li><a href="module.html?m=' + m.id + '">Module ' + m.id + " — " + C.esc(m.title) + "</a></li>";
+            return '<li><a href="' + C.moduleHref(m.id) + '\">Module ' + m.id + " — " + C.esc(m.title) + "</a></li>";
           }).join("") + "</ul>";
         } else {
           html += "<p>All correct. Still read Module 05 (the routine) and Module 12 (account rules) before trading in paperMoney.</p>";
         }
         html += '<p class="small muted">Even with a high score, work through the main track in order — the routine depends on all of it.</p>' +
-          '<a class="btn" href="module.html?m=' + rec.id + '">Start with Module ' + rec.id + "</a></div>";
+          '<a class="btn" href="' + C.moduleHref(rec.id) + '\">Start with Module ' + rec.id + "</a></div>";
         result.innerHTML = html;
         result.scrollIntoView({ behavior: "smooth" });
       }

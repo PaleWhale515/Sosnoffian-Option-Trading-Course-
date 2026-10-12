@@ -5,7 +5,9 @@
   "use strict";
   var C = window.Course;
   var params = new URLSearchParams(location.search);
-  var id = params.get("m") || "01";
+  var hm = /^#m(\d\d)$/.exec(location.hash);
+  var id = params.get("m") || (hm && hm[1]) || "01";
+  window.addEventListener("hashchange", function () { if (/^#m\d\d$/.test(location.hash)) location.reload(); });
   var idx = C.MODULES.findIndex(function (m) { return m.id === id; });
   var main = document.getElementById("content");
 
@@ -47,11 +49,11 @@
     var nav = document.createElement("div");
     nav.className = "module-nav";
     var prev = C.MODULES[idx - 1], next = C.MODULES[idx + 1];
-    nav.innerHTML = (prev ? '<a class="btn secondary" href="module.html?m=' + prev.id + '">← ' + prev.id + " " + C.esc(prev.title) + "</a>" : "<span></span>") +
+    nav.innerHTML = (prev ? '<a class="btn secondary" href="' + C.moduleHref(prev.id) + '\">← ' + prev.id + " " + C.esc(prev.title) + "</a>" : "<span></span>") +
       '<a class="btn secondary" href="index.html">Course map</a>' +
-      (next ? '<a class="btn" href="module.html?m=' + next.id + '">' + next.id + " " + C.esc(next.title) + " →</a>" : "<span></span>");
+      (next ? '<a class="btn" href="' + C.moduleHref(next.id) + '\">' + next.id + " " + C.esc(next.title) + " →</a>" : "<span></span>");
     main.appendChild(nav);
-    if (location.hash) { var t = document.getElementById(location.hash.slice(1)); if (t) t.scrollIntoView(); }
+    if (location.hash && !hm) { var t = document.getElementById(location.hash.slice(1)); if (t) t.scrollIntoView(); }
   }).catch(function (e) {
     main.innerHTML = '<div class="alert bad">Could not load module file <code>modules/' + C.esc(mod.file) +
       "</code>. Run <code>python3 tools/build_bundle.py</code> or serve the folder with <code>python3 -m http.server</code>. (" + C.esc(e.message) + ")</div>";

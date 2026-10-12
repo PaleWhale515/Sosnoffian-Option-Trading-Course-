@@ -203,7 +203,7 @@
       '<div class="caption">Underlying ' + p.spot + " · legs " + legsTxt + " · " + st.premium + " " + C.money(p.premium) + " per share</div>" +
       svgChart(res, p.spot) + summaryHTML(res, C.getSettings()) +
       '<figcaption class="caption">' + C.esc(cfg.caption || st.note) +
-      ' <a href="payoff.html?s=' + key + '">Open in the payoff tool →</a></figcaption>';
+      ' <a href="payoff.html#' + key + '">Open in the payoff tool →</a></figcaption>';
     container.appendChild(box);
   }
 

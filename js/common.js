@@ -157,6 +157,28 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
   }
 
+  /* Two-step confirmation inside the page: first click arms the button, second click acts.
+     Used instead of confirm(), which some embedded viewers block. */
+  function armConfirm(btn, onConfirm) {
+    btn.addEventListener("click", function () {
+      if (btn.getAttribute("data-armed") === "1") {
+        btn.removeAttribute("data-armed");
+        btn.textContent = btn.getAttribute("data-label");
+        onConfirm();
+        return;
+      }
+      btn.setAttribute("data-label", btn.textContent);
+      btn.setAttribute("data-armed", "1");
+      btn.textContent = "Click again to confirm";
+      setTimeout(function () {
+        if (btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = btn.getAttribute("data-label"); }
+      }, 4000);
+    });
+  }
+
+  /* Module links use a hash (module.html#m05) so they work in any host, including embedded viewers. */
+  function moduleHref(id) { return "module.html#m" + id; }
+
   window.Course = {
     TITLE: COURSE_TITLE,
     MODULES: MODULES,
@@ -176,7 +198,9 @@
     prettyDate: prettyDate,
     today: today,
     breakevenWinRate: breakevenWinRate,
-    download: download
+    download: download,
+    armConfirm: armConfirm,
+    moduleHref: moduleHref
   };
 
   if (document.readyState === "loading") {

@@ -40,7 +40,29 @@
     --adapt: #9aa4ad;
     --unverified: #ef7d7d;
     --chart-grid: #2c3237;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #15181b;
+  --surface: #1d2125;
+  --text: #e6e8ea;
+  --muted: #9aa4ad;
+  --border: #343a40;
+  --accent: #6fb1e0;
+  --accent-soft: #1e3242;
+  --good: #5cc28a;
+  --good-soft: #17301f;
+  --warn: #e0a64a;
+  --warn-soft: #362a14;
+  --bad: #ef7d7d;
+  --bad-soft: #3a1c1c;
+  --sosnoff: #b48ee0;
+  --tasty: #6fb1e0;
+  --adapt: #9aa4ad;
+  --unverified: #ef7d7d;
+  --chart-grid: #2c3237;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }

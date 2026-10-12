@@ -18,7 +18,7 @@ A self-paced, interactive options course built as a static website. Everything r
 | Path | What it is |
 |---|---|
 | `index.html` | Course home: tracks, module map, quiz progress, next step |
-| `module.html?m=NN` | Renders `modules/NN-*.md` with its quiz and payoff diagrams |
+| `module.html#mNN` | Renders `modules/NN-*.md` with its quiz and payoff diagrams |
 | `modules/*.md` | 12 modules: lesson (< 800 words), illustrative worked example sized to $100, "what would break this trade", sources, 3–5 question quiz |
 | `placement.html` | 15-question placement quiz |
 | `ticket.html` | Trade ticket: max profit/loss, breakeven, breakeven win rate, 50% GTC price, 21-DTE date, rule warnings, `.ics` reminder, open-position tracking |

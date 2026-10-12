@@ -42,7 +42,7 @@
       });
       sel.appendChild(og);
     });
-    var initial = new URLSearchParams(location.search).get("s");
+    var initial = new URLSearchParams(location.search).get("s") || location.hash.slice(1);
     if (initial && P.STRUCTURES[initial]) sel.value = initial;
 
     function build(useDefaults) {
@@ -74,9 +74,9 @@
       out.innerHTML = "<h2 style=\"margin-top:0\">" + C.esc(st.name) + "</h2><p class=\"muted\">" + C.esc(st.note) + "</p>" +
         P.svgChart(res, p.spot) + P.summaryHTML(res, C.getSettings()) +
         '<p class="small muted">Legs: ' + res.legs.map(function (l) { return (l.q > 0 ? "Buy " : "Sell ") + Math.abs(l.q) * res.qty + " × " + l.k + (l.t === "C" ? " call" : " put"); }).join(" · ") +
-        '. Learn more in <a href="module.html?m=' + st.module + '">Module ' + st.module + "</a>.</p>";
+        '. Learn more in <a href="' + C.moduleHref(st.module) + '\">Module ' + st.module + "</a>.</p>";
     }
-    sel.addEventListener("change", function () { history.replaceState(null, "", "?s=" + sel.value); build(true); });
+    sel.addEventListener("change", function () { history.replaceState(null, "", "#" + sel.value); build(true); });
     document.getElementById("reset").addEventListener("click", function () { build(true); });
     build(true);
   })();

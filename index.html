@@ -61,7 +61,7 @@
       if (s) done++;
       var pill = s ? '<span class="progress-pill' + (s.best === s.total ? " done" : "") + '">best ' + s.best + "/" + s.total + "</span>" : '<span class="muted small">not taken</span>';
       var tr = document.createElement("tr");
-      tr.innerHTML = "<td>" + m.id + '</td><td><a href="module.html?m=' + m.id + '">' + C.esc(m.title) + "</a></td><td>" + trackLabel[m.track] + "</td><td>" + pill + "</td>";
+      tr.innerHTML = "<td>" + m.id + '</td><td><a href="' + C.moduleHref(m.id) + '\">' + C.esc(m.title) + "</a></td><td>" + trackLabel[m.track] + "</td><td>" + pill + "</td>";
       tbody.appendChild(tr);
     });
     var pl = C.load(C.KEYS.placement, null);
@@ -73,10 +73,9 @@
       var rec = pl.recommend || "01";
       var mod = C.MODULES.filter(function (m) { return m.id === rec; })[0] || C.MODULES[0];
       next.innerHTML = "<h3>Your next step</h3><p>Placement score " + pl.score + "/" + pl.total + ". Suggested starting point: <strong>Module " + mod.id + " — " + C.esc(mod.title) + "</strong>. Quizzes taken: " + done + " of " + C.MODULES.length + ".</p>" +
-        '<div class="actions"><a class="btn" href="module.html?m=' + mod.id + '">Go to Module ' + mod.id + '</a><a class="btn secondary" href="placement.html">Retake placement</a></div>';
+        '<div class="actions"><a class="btn" href="' + C.moduleHref(mod.id) + '\">Go to Module ' + mod.id + '</a><a class="btn secondary" href="placement.html">Retake placement</a></div>';
     }
-    document.getElementById("reset-progress").addEventListener("click", function () {
-      if (!confirm("Erase all quiz scores (module quizzes and placement) from this browser?")) return;
+    C.armConfirm(document.getElementById("reset-progress"), function () {
       C.MODULES.forEach(function (m) { try { localStorage.removeItem(C.KEYS.quizPrefix + "module-" + m.id); } catch (e) {} });
       try { localStorage.removeItem(C.KEYS.quizPrefix + "placement"); localStorage.removeItem(C.KEYS.placement); } catch (e) {}
       location.reload();

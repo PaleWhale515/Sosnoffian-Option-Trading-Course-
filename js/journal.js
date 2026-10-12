@@ -97,8 +97,7 @@
       });
     });
     tb.querySelectorAll("[data-del]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        if (!confirm("Delete this trade from the journal?")) return;
+      C.armConfirm(b, function () {
         var r = all(); r.splice(+b.getAttribute("data-del"), 1); store(r); render();
       });
     });
@@ -155,6 +154,9 @@
 
   resetForm();
   var pre = new URLSearchParams(location.search).get("prefill");
+  if (!pre && location.hash === "#prefill") {
+    try { pre = sessionStorage.getItem("sosnoff.prefill"); sessionStorage.removeItem("sosnoff.prefill"); } catch (err) { pre = null; }
+  }
   if (pre) {
     try {
       var p = JSON.parse(pre);
